@@ -1,12 +1,9 @@
-val scala3Version = "3.4.1"
+ThisBuild / scalaVersion := "3.4.1"
+ThisBuild / version := "dev"
 
-lazy val root = project
+lazy val entrypoint = project
   .in(file("."))
   .settings(
     name := "template-zio",
-    version := "0.1.0-SNAPSHOT",
-
-    scalaVersion := scala3Version,
-
-    libraryDependencies += "org.scalameta" %% "munit" % "0.7.29" % Test
+    libraryDependencies ++= Dependencies.entrypointDependencies
   )
