@@ -4,6 +4,7 @@ object Dependencies {
 
   private object Version {
     val zio = "2.0.22"
+    val zioConfig = "4.0.2"
     val tapir = "1.10.6"
   }
 
@@ -13,7 +14,10 @@ object Dependencies {
 
   private object ZIO extends Dependencies {
     val Core = "dev.zio" %% "zio" % Version.zio
-    val all = Core :: Nil
+    val Config = "dev.zio" %% "zio-config" % Version.zioConfig
+    val Typesafe = "dev.zio" %% "zio-config-typesafe" % Version.zioConfig
+    val Magnolia = "dev.zio" %% "zio-config-magnolia" % Version.zioConfig
+    val all = Core :: Config :: Typesafe :: Magnolia :: Nil
   }
 
   private object Tapir extends Dependencies {
