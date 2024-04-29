@@ -7,5 +7,5 @@ sealed trait ErrorInfo
 case class InternalServerError(error: String = "Internal server error") extends ErrorInfo
 
 object ErrorInfo:
-  given internalServerErrorEncoder: Encoder[InternalServerError] = deriveEncoder[InternalServerError]
-  given internalServerErrorDecoder: Decoder[InternalServerError] = deriveDecoder[InternalServerError]
+  given Encoder[InternalServerError] = deriveEncoder[InternalServerError]
+  given Decoder[InternalServerError] = deriveDecoder[InternalServerError]

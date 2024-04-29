@@ -10,24 +10,30 @@ import zio._
 
 object Server {
 
-  def run[R](endpoint: ZServerEndpoint[Any, Any])(implicit runtime: Runtime[R]): ZIO[Any, Throwable, Nothing] = {
-    val attach = VertxZioServerInterpreter[R]().route(endpoint)
-
-    ZIO.scoped(
-      ZIO
-        .acquireRelease(
-          ZIO
-            .attempt {
-              val vertx = Vertx.vertx()
-              val server = vertx.createHttpServer()
-              val router = Router.router(vertx)
-              attach(router)
-              server.requestHandler(router).listen(8080)
-            }
-            .flatMap(_.asRIO)
+  def run[R](
+    endpoints: List[ZServerEndpoint[Any, Any]]
+  )(implicit
+    runtime: Runtime[R]
+  ): ZIO[Any, Throwable, Unit] = {
+    for {
+      runtime <- ZIO.runtime
+      vertx <- ZIO.succeed(Vertx.vertx())
+      router <- ZIO.succeed(Router.router(vertx))
+      _ <- ZIO.attempt {
+        val interpreter = VertxZioServerInterpreter[Any]()
+        endpoints.foreach(interpreter.route(_)(runtime)(router))
+      }
+      server <- ZIO.attempt {
+        val server = vertx.createHttpServer()
+        server.requestHandler(router)
+      }
+      _ <- ZIO.scoped(
+        ZIO.acquireRelease(
+          ZIO.attempt(server.listen(8080)).flatMap(_.asRIO)
         ) { server =>
           ZIO.attempt(server.close()).flatMap(_.asRIO).orDie
         } *> ZIO.never
-    )
+      )
+    } yield ()
   }
 }
