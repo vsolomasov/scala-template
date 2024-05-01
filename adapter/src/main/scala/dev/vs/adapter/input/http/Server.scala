@@ -1,28 +1,40 @@
 package dev.vs.adapter.input.http
 
 import dev.vs.adapter.input.config.AppConfig.ServerConfig
+import dev.vs.adapter.input.http.interceptor.CtxInterceptor
+import dev.vs.adapter.output.ServerLogZioImpl.ServerLogZIO
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpServerOptions
 import io.vertx.ext.web.Router
 import sttp.tapir.server.vertx.zio.VertxZioServerInterpreter
 import sttp.tapir.server.vertx.zio.VertxZioServerInterpreter._
-import zio.ZIO
+import sttp.tapir.server.vertx.zio.VertxZioServerOptions
 import zio._
 
-object Server {
+object Server:
+
+  type ServerEnv = Scope & CtxInterceptor & ServerLogZIO
 
   def run[R](
     endpoints: Endpoints,
     server: ServerConfig
   )(implicit
     runtime: Runtime[R]
-  ): ZIO[Scope, Throwable, Unit] = {
+  ): ZIO[ServerEnv, Throwable, Unit] = {
     for {
       runtime <- ZIO.runtime
       vertx <- ZIO.succeed(Vertx.vertx())
       router <- ZIO.succeed(Router.router(vertx))
+      serverLog <- ZIO.service[ServerLogZIO]
+      ctxInterceptor <- ZIO.service[CtxInterceptor]
       _ <- ZIO.attempt {
-        val interpreter = VertxZioServerInterpreter[Any]()
+        val serverOptions =
+          VertxZioServerOptions
+            .customiseInterceptors[Any]
+            .prependInterceptor(ctxInterceptor)
+            .serverLog(serverLog)
+            .options
+        val interpreter = VertxZioServerInterpreter[Any](serverOptions)
         endpoints.endpoints.foreach(interpreter.route(_)(runtime)(router))
       }
       server <- ZIO.attempt {
@@ -41,4 +53,3 @@ object Server {
       }
     } yield ()
   }
-}

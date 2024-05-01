@@ -14,7 +14,8 @@ class ReadinessEndpoint(base: BaseEndpoints) extends Endpoint:
     .in("system" / "readiness")
     .out(jsonBody[ReadinessResponse])
 
-  val endpoint: ZServerEndpoint[Any, Any] = protocol.zServerLogic(_ => ZIO.succeed(ReadinessResponse("Ready")))
+  val endpoint: ZServerEndpoint[Any, Any] =
+    protocol.zServerLogic(_ => ZIO.succeed(ReadinessResponse("Ready")))
 
 object ReadinessEndpoint:
   val live: URLayer[BaseEndpoints, ReadinessEndpoint] =

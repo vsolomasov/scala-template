@@ -14,7 +14,8 @@ class LivenessEndpoint(base: BaseEndpoints) extends Endpoint:
     .in("system" / "liveness")
     .out(jsonBody[LivenessResponse])
 
-  val endpoint: ZServerEndpoint[Any, Any] = protocol.zServerLogic(_ => ZIO.succeed(LivenessResponse("Live")))
+  val endpoint: ZServerEndpoint[Any, Any] =
+    protocol.zServerLogic(_ => ZIO.succeed(LivenessResponse("Live")))
 
 object LivenessEndpoint:
   val live: URLayer[BaseEndpoints, LivenessEndpoint] =
