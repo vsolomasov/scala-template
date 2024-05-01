@@ -1,5 +1,6 @@
 package dev.vs.adapter.input.http.system
 
+import dev.vs.adapter.input.http.Endpoints
 import dev.vs.adapter.input.http.system.liveness.LivenessEndpoint
 import dev.vs.adapter.input.http.system.readiness.ReadinessEndpoint
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
@@ -11,7 +12,7 @@ import zio.ZLayer
 class SystemEndpoints(
   livess: LivenessEndpoint,
   readiness: ReadinessEndpoint
-) {
+) extends Endpoints {
 
   val endpoints: List[ZServerEndpoint[Any, Any]] = {
     val api: List[ZServerEndpoint[Any, Any]] = (livess :: readiness :: Nil).map(_.endpoint)

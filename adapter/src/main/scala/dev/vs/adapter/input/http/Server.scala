@@ -6,25 +6,24 @@ import io.vertx.core.http.HttpServerOptions
 import io.vertx.ext.web.Router
 import sttp.tapir.server.vertx.zio.VertxZioServerInterpreter
 import sttp.tapir.server.vertx.zio.VertxZioServerInterpreter._
-import sttp.tapir.ztapir._
 import zio.ZIO
 import zio._
 
 object Server {
 
   def run[R](
-    endpoints: List[ZServerEndpoint[Any, Any]],
+    endpoints: Endpoints,
     server: ServerConfig
   )(implicit
     runtime: Runtime[R]
-  ): ZIO[Any, Throwable, Nothing] = {
+  ): ZIO[Scope, Throwable, Unit] = {
     for {
       runtime <- ZIO.runtime
       vertx <- ZIO.succeed(Vertx.vertx())
       router <- ZIO.succeed(Router.router(vertx))
       _ <- ZIO.attempt {
         val interpreter = VertxZioServerInterpreter[Any]()
-        endpoints.foreach(interpreter.route(_)(runtime)(router))
+        endpoints.endpoints.foreach(interpreter.route(_)(runtime)(router))
       }
       server <- ZIO.attempt {
         val httpServerOptions = new HttpServerOptions()
@@ -35,13 +34,11 @@ object Server {
         )
         httpServer.requestHandler(router)
       }
-      result <- ZIO.scoped(
-        ZIO.acquireRelease(
-          ZIO.attempt(server.listen()).flatMap(_.asRIO)
-        ) { server =>
-          ZIO.attempt(server.close()).flatMap(_.asRIO).orDie
-        } *> ZIO.never
-      )
-    } yield result
+      _ <- ZIO.acquireRelease(
+        ZIO.attempt(server.listen()).flatMap(_.asRIO)
+      ) { server =>
+        ZIO.attempt(server.close()).flatMap(_.asRIO).orDie
+      }
+    } yield ()
   }
 }
