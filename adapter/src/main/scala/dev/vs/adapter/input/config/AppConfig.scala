@@ -14,6 +14,6 @@ object AppConfig:
   final case class ServerConfig(host: String, port: Int)
   final case class ServersConfig(system: ServerConfig)
 
-  val live: ZLayer[Any, Config.Error, AppConfig] = ZLayer.fromZIO(
+  val live: Layer[Config.Error, AppConfig] = ZLayer.fromZIO(
     ConfigProvider.fromResourcePath().load(deriveConfig[AppConfig])
   )

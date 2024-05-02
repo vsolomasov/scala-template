@@ -18,15 +18,16 @@ lazy val entrypoint = project
   .enablePlugins(BuildInfoPlugin)
   .settings(
     name := "entrypoint",
-    run / fork := true,
+    buildInfoObject := "Info",
+    buildInfoPackage := s"${organization.value}.${name.value}",
+    buildInfoOptions += BuildInfoOption.BuildTime,
     buildInfoKeys := Seq[BuildInfoKey](
       version,
-      BuildInfoKey.apply("name" -> projectName),
-      BuildInfoKey.action("buildTime") {
-        System.currentTimeMillis()
-      }
+      BuildInfoKey("name" -> projectName)
     ),
-    buildInfoPackage := s"${organization.value}.${name.value}"
+    run / fork := true,
+    run / javaOptions += s"-D${projectName}.inst=local",
+    run / javaOptions += s"-D${projectName}.env=local",
   )
   .dependsOn(adapter)
   .aggregate(adapter)
