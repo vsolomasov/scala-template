@@ -25,7 +25,6 @@ class CirceRenderingPolicy(
   import CirceRenderingPolicy._
 
   protected def EventKey = "event"
-  protected def ContextKey = "context"
   protected def MetaKey = "meta"
   protected def MessageKey = "message"
 
@@ -66,7 +65,7 @@ class CirceRenderingPolicy(
     )
 
     if (ctx.nonEmpty) {
-      result += ContextKey -> ctx.asJson
+      ctx.foreach(result += _)
     }
 
     result ++= makeEventEnvelope(entry, formatted)
@@ -103,8 +102,8 @@ class CirceRenderingPolicy(
     )
 
     val tail = Seq(
-      MetaKey -> eventInfo,
-      MessageKey -> Json.fromString(formatted.message)
+      MessageKey -> Json.fromString(formatted.message),
+      MetaKey -> eventInfo
     )
 
     tail

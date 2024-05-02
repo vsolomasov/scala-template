@@ -12,7 +12,7 @@ import zio.IO
 import zio.ZIO
 import zio.ZLayer
 
-object LogZIOImpl:
+object LogZioImpl:
 
   val live: ZLayer[AppInfo & AppConfig, Throwable, LogZIO] = ZLayer {
     for {

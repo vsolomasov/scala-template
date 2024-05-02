@@ -5,6 +5,8 @@ object Dependencies {
   private object Version {
     val zio = "2.0.22"
     val zioConfig = "4.0.2"
+    val zioMetrics = "2.3.1"
+    val micrometer = "1.12.5"
     val izumi = "1.2.8"
     val tapir = "1.10.6"
   }
@@ -21,6 +23,18 @@ object Dependencies {
     val all = Core :: Config :: Typesafe :: Magnolia :: Nil
   }
 
+  private object ZioMetrics extends Dependencies {
+    val Connectors = "dev.zio" %% "zio-metrics-connectors" % Version.zioMetrics
+    val Micrometer = "dev.zio" %% "zio-metrics-connectors-micrometer" % Version.zioMetrics
+    val all = Connectors :: Micrometer :: Nil
+  }
+
+  private object Micrometer extends Dependencies {
+    val Core = "io.micrometer" % "micrometer-core" % Version.micrometer
+    val Prometheus = "io.micrometer" % "micrometer-registry-prometheus" % Version.micrometer
+    val all = Core :: Prometheus :: Nil
+  }
+
   private object Izumi extends Dependencies {
     val LogStageCore = "io.7mind.izumi" %% "logstage-core" % Version.izumi
     val LogStageCirce = "io.7mind.izumi" %% "logstage-rendering-circe" % Version.izumi
@@ -32,10 +46,10 @@ object Dependencies {
     val Core = "com.softwaremill.sttp.tapir" %% "tapir-core" % Version.tapir
     val Zio = "com.softwaremill.sttp.tapir" %% "tapir-zio" % Version.tapir
     val Circe = "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % Version.tapir
-    val Swager = "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % Version.tapir
+    val Swagger = "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % Version.tapir
     val Vertx = "com.softwaremill.sttp.tapir" %% "tapir-vertx-server-zio" % Version.tapir
-    val all = Core :: Zio :: Circe :: Swager :: Vertx :: Nil
+    val all = Core :: Zio :: Circe :: Swagger :: Vertx :: Nil
   }
 
-  val adapterDependencies = (ZIO :: Izumi :: Tapir :: Nil).flatMap(_.all)
+  val adapterDependencies = (ZIO :: ZioMetrics :: Micrometer :: Izumi :: Tapir :: Nil).flatMap(_.all)
 }
