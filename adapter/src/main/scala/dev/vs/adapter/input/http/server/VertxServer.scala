@@ -1,9 +1,10 @@
-package dev.vs.adapter.input.http
+package dev.vs.adapter.input.http.server
 
 import dev.vs.adapter.input.config.AppConfig.ServerConfig
-import dev.vs.adapter.input.http.interceptor.CtxInterceptor
-import dev.vs.adapter.output.ServerLogZioImpl.ServerLogZIO
-import dev.vs.adapter.output.metric.ServerMetrics.MetricsInterceptor
+import dev.vs.adapter.input.http.Endpoints
+import dev.vs.adapter.input.http.interceptor.ctx.CtxInterceptor
+import dev.vs.adapter.input.http.interceptor.log.ServerLogInterceptor
+import dev.vs.adapter.input.http.interceptor.metric.ServerMetricInterceptor
 import io.vertx.core.Vertx
 import io.vertx.core.http.HttpServerOptions
 import io.vertx.ext.web.Router
@@ -12,30 +13,29 @@ import sttp.tapir.server.vertx.zio.VertxZioServerInterpreter._
 import sttp.tapir.server.vertx.zio.VertxZioServerOptions
 import zio._
 
-object Server:
-
-  type ServerEnv = Scope & CtxInterceptor & ServerLogZIO & MetricsInterceptor
+class VertxServer(
+  ctxInterceptor: CtxInterceptor,
+  serverLogInterceptor: ServerLogInterceptor,
+  serverMetricInterceptor: ServerMetricInterceptor
+) extends Server:
 
   def run[R](
-    endpoints: Endpoints,
-    server: ServerConfig
+    config: ServerConfig,
+    endpoints: Endpoints
   )(implicit
     runtime: Runtime[R]
-  ): ZIO[ServerEnv, Throwable, Unit] = {
+  ): ZIO[Scope, Throwable, Unit] = {
     for {
       runtime <- ZIO.runtime
       vertx <- ZIO.succeed(Vertx.vertx())
       router <- ZIO.succeed(Router.router(vertx))
-      serverLog <- ZIO.service[ServerLogZIO]
-      ctxInterceptor <- ZIO.service[CtxInterceptor]
-      metricsInterceptor <- ZIO.service[MetricsInterceptor]
       _ <- ZIO.attempt {
         val serverOptions =
           VertxZioServerOptions
             .customiseInterceptors[Any]
             .prependInterceptor(ctxInterceptor)
-            .metricsInterceptor(metricsInterceptor)
-            .serverLog(serverLog)
+            .metricsInterceptor(serverMetricInterceptor)
+            .serverLog(serverLogInterceptor)
             .options
         val interpreter = VertxZioServerInterpreter[Any](serverOptions)
         endpoints.endpoints.foreach(interpreter.route(_)(runtime)(router))
@@ -44,8 +44,8 @@ object Server:
         val httpServerOptions = new HttpServerOptions()
         val httpServer = vertx.createHttpServer(
           httpServerOptions
-            .setHost(server.host)
-            .setPort(server.port)
+            .setHost(config.host)
+            .setPort(config.port)
         )
         httpServer.requestHandler(router)
       }
@@ -56,3 +56,8 @@ object Server:
       }
     } yield ()
   }
+
+object VertxServer:
+  type ServerEnv = CtxInterceptor & ServerLogInterceptor & ServerMetricInterceptor
+
+  def live: ZLayer[ServerEnv, Throwable, Server] = ZLayer.fromFunction(new VertxServer(_, _, _))

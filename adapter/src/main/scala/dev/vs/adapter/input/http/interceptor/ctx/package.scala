@@ -1,16 +1,25 @@
-package dev.vs.adapter.input.http
+package dev.vs.adapter.input.http.interceptor
 
 import logstage.LogZIO
 import sttp.tapir.AttributeKey
+import sttp.tapir.server.interceptor.EndpointInterceptor
+import sttp.tapir.server.interceptor.RequestHandler
 import sttp.tapir.server.interceptor.RequestInterceptor
+import sttp.tapir.server.interceptor.Responder
 import zio.Random
 import zio.Task
 import zio.URLayer
 import zio.ZIO
 import zio.ZLayer
 
-package object interceptor {
-  type CtxInterceptor = RequestInterceptor[Task]
+package object ctx {
+
+  class CtxInterceptor(delegate: RequestInterceptor[Task]) extends RequestInterceptor[Task]:
+
+    override def apply[R, B](
+      responder: Responder[Task, B],
+      requestHandler: EndpointInterceptor[Task] => RequestHandler[Task, R, B]
+    ): RequestHandler[Task, R, B] = delegate.apply[R, B](responder, requestHandler)
 
   val LogZioAttribute = new AttributeKey[LogZIO]("contextLog")
 
@@ -23,7 +32,7 @@ package object interceptor {
   object CtxInterceptor {
     val live: URLayer[LogZIO, CtxInterceptor] = ZLayer.fromZIO {
       ZIO.service[LogZIO].map { log =>
-        RequestInterceptor
+        val delegate = RequestInterceptor
           .transformServerRequest[Task] { request =>
             Random.nextUUID.map { requestId =>
               val formattedRequestId =
@@ -38,6 +47,7 @@ package object interceptor {
               request.attribute(LogZioAttribute, withCtx)
             }
           }
+        new CtxInterceptor(delegate)
       }
     }
   }
