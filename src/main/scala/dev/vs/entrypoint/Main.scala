@@ -12,6 +12,8 @@ import dev.vs.adapter.input.http.system.readiness.ReadinessEndpoint
 import dev.vs.adapter.output.ServerLogZioImpl
 import dev.vs.adapter.output.ServerLogZioImpl.ServerLogZIO
 import dev.vs.adapter.output.log.LogZioImpl
+import dev.vs.adapter.output.metric.ServerMetrics
+import dev.vs.adapter.output.metric.ServerMetrics.MetricsInterceptor
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import logstage.LogZIO
@@ -22,7 +24,8 @@ import zio.metrics.connectors.micrometer.MicrometerConfig
 
 object Main extends ZIOAppDefault:
 
-  type ProgramEnv = LogZIO & CtxInterceptor & ServerLogZIO & AppConfig & SystemEndpoints
+  type ProgramEnv = LogZIO & CtxInterceptor & ServerLogZIO & MetricsInterceptor & AppConfig &
+    SystemEndpoints
 
   private def program(): ZIO[ProgramEnv, Throwable, Unit] =
     for {
@@ -40,12 +43,13 @@ object Main extends ZIOAppDefault:
       ZLayer.succeed(MicrometerConfig.default),
       ZLayer.succeed(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT)),
       micrometer.micrometerLayer,
-      Runtime.enableRuntimeMetrics,
+      ServerMetrics.live,
+      // Runtime.enableRuntimeMetrics,
       // DefaultJvmMetrics.live.unit,
       AppInfo.live(Info.name, Info.version),
       AppConfig.live,
       LogZioImpl.live,
-      CtxInterceptor.live,
+      // CtxInterceptor.live,
       ServerLogZioImpl.live,
       BaseEndpoints.live,
       LivenessEndpoint.live,

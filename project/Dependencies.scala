@@ -47,8 +47,9 @@ object Dependencies {
     val Zio = "com.softwaremill.sttp.tapir" %% "tapir-zio" % Version.tapir
     val Circe = "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % Version.tapir
     val Swagger = "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % Version.tapir
+    val ZioMetrics = "com.softwaremill.sttp.tapir" %% "tapir-zio-metrics" % Version.tapir
     val Vertx = "com.softwaremill.sttp.tapir" %% "tapir-vertx-server-zio" % Version.tapir
-    val all = Core :: Zio :: Circe :: Swagger :: Vertx :: Nil
+    val all = Core :: Zio :: Circe :: Swagger :: ZioMetrics :: Vertx :: Nil
   }
 
   val adapterDependencies = (ZIO :: ZioMetrics :: Micrometer :: Izumi :: Tapir :: Nil).flatMap(_.all)
